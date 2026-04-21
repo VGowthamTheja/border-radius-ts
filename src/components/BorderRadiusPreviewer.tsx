@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { Radius } from "../types/radius";
 import { generateBorderRadius } from "../utils/css";
+import DiceIcon from "../assets/icons/dice.svg";
+import ResetIcon from "../assets/icons/reset.svg";
 
 export default function BorderRadiusPreviewer() {
     const [radius, setRadius] = useState<Radius>(
@@ -54,24 +56,46 @@ export default function BorderRadiusPreviewer() {
     }
 
     const randomizeRadius = () => {
-        setRadius({
+        // Generate random values for each key
+        const newRadius: Radius = {
             topLeft: Math.floor(Math.random() * 101),
             topRight: Math.floor(Math.random() * 101),
             bottomLeft: Math.floor(Math.random() * 101),
             bottomRight: Math.floor(Math.random() * 101),
-        });
+            topLeftY: Math.floor(Math.random() * 101),
+            topRightY: Math.floor(Math.random() * 101),
+            bottomLeftY: Math.floor(Math.random() * 101),
+            bottomRightY: Math.floor(Math.random() * 101),
+        };
+        setRadius(newRadius);
     }
 
     const resetRadius = () => {
-        setRadius({ topLeft: 20, topRight: 20, bottomLeft: 20, bottomRight: 20 });
+        setRadius({
+            topLeft: 20,
+            topRight: 20,
+            bottomLeft: 20,
+            bottomRight: 20,
+            topLeftY: 20,
+            topRightY: 20,
+            bottomLeftY: 20,
+            bottomRightY: 20,
+        });
     };
 
     return (
         <div className="container">
             <div className="utility">
                 {/* Randomize button and reset button with icons */}
-                <button onClick={randomizeRadius}>Randomize</button>
-                <button onClick={resetRadius}>Reset</button>
+                <button onClick={randomizeRadius} className="btn btn-green">
+                    {/* DiceIcon SVG should be visible */}
+                    <img src={DiceIcon} alt="Randomize" />
+                    Randomize
+                </button>
+                <button onClick={resetRadius} className="btn btn-red">
+                    <img src={ResetIcon} alt="Reset" />
+                    Reset
+                </button>
                 {/* Toggle for elliptical mode */}
                 <div className="toggle">
                     <label htmlFor="ellipse">Elliptical Mode (8 values)</label>
@@ -89,17 +113,32 @@ export default function BorderRadiusPreviewer() {
                     ))}
                 </div>
             </div>
-            <div
-                className="preview-box"
-                style={{
-                    borderRadius: generateBorderRadius(radius, isEllipse)
-                }}
-            >
+            <div className="preview-container">
+                <div
+                    className="preview-box"
+                    style={{
+                        borderRadius: generateBorderRadius(radius, isEllipse)
+                    }}
+                >
+                </div>
             </div>
             <div className="controls">
                 {activeKeys.map((key) => (
                     <div key={key} className="control">
-                        <label htmlFor={key}>{key.toUpperCase()}</label>
+                        <div className="flex-row">
+                            {/* Simple CSS-based indicator */}
+                            <div
+                                className="indicator"
+                                style={{
+                                    // Apply the radius to only the specific corner being controlled
+                                    borderTopLeftRadius: key.includes('topLeft') ? '4px' : '0',
+                                    borderTopRightRadius: key.includes('topRight') ? '4px' : '0',
+                                    borderBottomLeftRadius: key.includes('bottomLeft') ? '4px' : '0',
+                                    borderBottomRightRadius: key.includes('bottomRight') ? '4px' : '0',
+                                }}
+                            />
+                            <label htmlFor={key}>{key.replace(/([A-Z])/g, ' $1').trim()}</label>
+                        </div>
                         <input
                             type="range"
                             id={key}

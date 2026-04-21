@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './App.css'
 import BorderRadiusPreviewer from './components/BorderRadiusPreviewer'
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+  }, [darkMode]);
   return (
     <div className={`app ${darkMode ? 'dark' : ''}`}>
       <div className="header">

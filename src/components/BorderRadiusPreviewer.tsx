@@ -1,36 +1,55 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import type { MouseEvent } from "react";
 import type { Radius } from "../types/radius";
 import { generateBorderRadius } from "../utils/css";
 import DiceIcon from "../assets/icons/dice.svg";
 import ResetIcon from "../assets/icons/reset.svg";
 
 export default function BorderRadiusPreviewer() {
-    const [radius, setRadius] = useState<Radius>(
-        {
-            topLeft: 20,
-            topRight: 20,
-            bottomLeft: 20,
-            bottomRight: 20,
-            topLeftY: 20,
-            topRightY: 20,
-            bottomLeftY: 20,
-            bottomRightY: 20,
-        }
-    );
+    const [radius, setRadius] = useState<Radius>({
+        topLeft: 20,
+        topRight: 20,
+        bottomLeft: 20,
+        bottomRight: 20,
+        topLeftY: 20,
+        topRightY: 20,
+        bottomLeftY: 20,
+        bottomRightY: 20,
+    });
     const [copied, setCopied] = useState<boolean>(false);
     const [isEllipse, setIsEllipse] = useState<boolean>(false);
+    const [isDragging, setIsDragging] = useState<string | null>(null);
+    const previewRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const newRadius: Partial<Radius> = {};
-
-        params.forEach((value, key) => {
-            newRadius[key as keyof Radius] = parseInt(value);
-        });
-        if (Object.keys(newRadius).length > 0) {
-            setRadius((prev) => ({ ...prev, ...newRadius }));
+        if (params.size > 0) {
+            params.forEach((value, key) => {
+                newRadius[key as keyof Radius] = parseInt(value);
+            });
+            setRadius(newRadius as Radius);
         }
-    }, [])
+
+        if (params.has("ellipse")) {
+            setIsEllipse(params.get("ellipse") === "true");
+        }
+
+        if (!params.has("topLeft") || !params.has("topRight") || !params.has("bottomLeft") || !params.has("bottomRight")) {
+            setRadius({
+                topLeft: 20,
+                topRight: 20,
+                bottomLeft: 20,
+                bottomRight: 20,
+                topLeftY: 20,
+                topRightY: 20,
+                bottomLeftY: 20,
+                bottomRightY: 20,
+            });
+        }
+
+    }, []);
+
     useEffect(() => {
         // Update URL with current radius values
         const params = new URLSearchParams();
@@ -48,6 +67,14 @@ export default function BorderRadiusPreviewer() {
         "rounded": { topLeft: 20, topRight: 20, bottomLeft: 20, bottomRight: 20 },
         "pill": { topLeft: 999, topRight: 999, bottomLeft: 999, bottomRight: 999 },
         "square": { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0 },
+        "Default": { topLeft: 20, topRight: 20, bottomLeft: 20, bottomRight: 20 },
+    };
+
+    const ellipsePresets: Record<string, Radius> = {
+        "rounded": { topLeft: 20, topRight: 20, bottomLeft: 20, bottomRight: 20, topLeftY: 20, topRightY: 20, bottomLeftY: 20, bottomRightY: 20 },
+        "pill": { topLeft: 999, topRight: 999, bottomLeft: 999, bottomRight: 999, topLeftY: 999, topRightY: 999, bottomLeftY: 999, bottomRightY: 999 },
+        "square": { topLeft: 0, topRight: 0, bottomLeft: 0, bottomRight: 0, topLeftY: 0, topRightY: 0, bottomLeftY: 0, bottomRightY: 0 },
+        "Default": { topLeft: 20, topRight: 20, bottomLeft: 20, bottomRight: 20, topLeftY: 20, topRightY: 20, bottomLeftY: 20, bottomRightY: 20 },
     };
 
     const handleChange = (key: keyof Radius, value: number) => {
@@ -62,11 +89,13 @@ export default function BorderRadiusPreviewer() {
             topRight: Math.floor(Math.random() * 101),
             bottomLeft: Math.floor(Math.random() * 101),
             bottomRight: Math.floor(Math.random() * 101),
-            topLeftY: Math.floor(Math.random() * 101),
-            topRightY: Math.floor(Math.random() * 101),
-            bottomLeftY: Math.floor(Math.random() * 101),
-            bottomRightY: Math.floor(Math.random() * 101),
         };
+        if (isEllipse) {
+            newRadius.topLeftY = Math.floor(Math.random() * 101);
+            newRadius.topRightY = Math.floor(Math.random() * 101);
+            newRadius.bottomLeftY = Math.floor(Math.random() * 101);
+            newRadius.bottomRightY = Math.floor(Math.random() * 101);
+        }
         setRadius(newRadius);
     }
 
@@ -82,6 +111,70 @@ export default function BorderRadiusPreviewer() {
             bottomRightY: 20,
         });
     };
+
+    const handleMouseDown = (corner: string) => (e: MouseEvent) => {
+        e.preventDefault();
+        setIsDragging(corner);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+        if (!isDragging || !previewRef.current) return;
+
+        const rect = previewRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+
+        const deltaX = Math.abs(mouseX - centerX);
+        const deltaY = Math.abs(mouseY - centerY);
+
+        const maxRadius = Math.min(rect.width, rect.height) / 2;
+        const radiusX = Math.min(Math.max(0, deltaX), maxRadius);
+        const radiusY = Math.min(Math.max(0, deltaY), maxRadius);
+
+        const scaledRadiusX = Math.round((radiusX / maxRadius) * 100);
+        const scaledRadiusY = Math.round((radiusY / maxRadius) * 100);
+
+        const newRadius = { ...radius };
+
+        switch (isDragging) {
+            case 'topLeft':
+                newRadius.topLeft = scaledRadiusX;
+                if (isEllipse) newRadius.topLeftY = scaledRadiusY;
+                break;
+            case 'topRight':
+                newRadius.topRight = scaledRadiusX;
+                if (isEllipse) newRadius.topRightY = scaledRadiusY;
+                break;
+            case 'bottomLeft':
+                newRadius.bottomLeft = scaledRadiusX;
+                if (isEllipse) newRadius.bottomLeftY = scaledRadiusY;
+                break;
+            case 'bottomRight':
+                newRadius.bottomRight = scaledRadiusX;
+                if (isEllipse) newRadius.bottomRightY = scaledRadiusY;
+                break;
+        }
+
+        setRadius(newRadius);
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(null);
+    };
+
+    useEffect(() => {
+        if (isDragging) {
+            document.addEventListener('mousemove', handleMouseMove as any);
+            document.addEventListener('mouseup', handleMouseUp);
+            return () => {
+                document.removeEventListener('mousemove', handleMouseMove as any);
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
+        }
+    }, [isDragging, radius, isEllipse]);
 
     return (
         <div className="container">
@@ -103,23 +196,53 @@ export default function BorderRadiusPreviewer() {
                         type="checkbox"
                         id="ellipse"
                         checked={isEllipse}
-                        onChange={(e) => setIsEllipse(e.target.checked)}
+                        onChange={(e) => {
+                            setIsEllipse(e.target.checked);
+                            // Reset to default values when switching modes
+                            if (e.target.checked) {
+                                setRadius(ellipsePresets['Default']);
+                            } else {
+                                setRadius(presets['Default']);
+                            }
+                        }}
                     />
                 </div>
                 {/* Presets */}
                 <div className="presets">
-                    {Object.keys(presets).map((preset) => (
-                        <button key={preset} onClick={() => setRadius(presets[preset])}>{preset}</button>
+                    {Object.keys(presets).filter((preset) => preset !== 'Default').map((preset) => (
+                        <button key={preset} onClick={() => setRadius(isEllipse ? ellipsePresets[preset] : presets[preset])}>{preset}</button>
                     ))}
                 </div>
             </div>
             <div className="preview-container">
                 <div
+                    ref={previewRef}
                     className="preview-box"
                     style={{
                         borderRadius: generateBorderRadius(radius, isEllipse)
                     }}
                 >
+                    {/* Draggable handles */}
+                    <div
+                        className="drag-handle top-left"
+                        onMouseDown={handleMouseDown('topLeft')}
+                        style={{ cursor: isDragging === 'topLeft' ? 'grabbing' : 'grab' }}
+                    />
+                    <div
+                        className="drag-handle top-right"
+                        onMouseDown={handleMouseDown('topRight')}
+                        style={{ cursor: isDragging === 'topRight' ? 'grabbing' : 'grab' }}
+                    />
+                    <div
+                        className="drag-handle bottom-left"
+                        onMouseDown={handleMouseDown('bottomLeft')}
+                        style={{ cursor: isDragging === 'bottomLeft' ? 'grabbing' : 'grab' }}
+                    />
+                    <div
+                        className="drag-handle bottom-right"
+                        onMouseDown={handleMouseDown('bottomRight')}
+                        style={{ cursor: isDragging === 'bottomRight' ? 'grabbing' : 'grab' }}
+                    />
                 </div>
             </div>
             <div className="controls">
@@ -159,7 +282,7 @@ export default function BorderRadiusPreviewer() {
                 ))}
             </div>
             <div className="output">
-                css: <code>{generateBorderRadius(radius, isEllipse)}</code>
+                <span>css:</span> <code>{generateBorderRadius(radius, isEllipse)}</code>
                 <button onClick={() => {
                     navigator.clipboard.writeText(`border-radius: ${generateBorderRadius(radius, isEllipse)};`);
                     setCopied(true);

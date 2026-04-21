@@ -252,7 +252,7 @@ code {
 }
 
 .toggle input[type="checkbox"]:checked::before {
-  transform: translateX(16px);
+  transform: translateX(8px);
 }
 
 .preview-container {
@@ -286,4 +286,103 @@ code {
   height: 100%;
   background: var(--preview-bg);
   border-radius: inherit;
+}
+
+/* Draggable Handles */
+.drag-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: 2px solid white;
+  border-radius: 50%;
+  z-index: 10;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: grab;
+}
+
+.drag-handle:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.2);
+}
+
+.drag-handle:active,
+.drag-handle.grabbing {
+  cursor: grabbing;
+  transform: scale(1.3);
+  box-shadow: 0 0 0 6px rgba(13, 148, 136, 0.3);
+}
+
+.drag-handle.top-left {
+  top: -6px;
+  left: -6px;
+}
+
+.drag-handle.top-right {
+  top: -6px;
+  right: -6px;
+}
+
+.drag-handle.bottom-left {
+  bottom: -6px;
+  left: -6px;
+}
+
+.drag-handle.bottom-right {
+  bottom: -6px;
+  right: -6px;
+}
+
+.output {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding: 15px;
+  background: var(--card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.output span {
+  margin-right: 10px;
+  font-weight: bold;
+  color: var(--text);
+  opacity: 0.7;
+  user-select: none;
+  cursor: default;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.85rem;
+  margin-bottom: 2px;
+  display: block;
+}
+
+.output code {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.output button {
+  padding: 8px 16px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.output button:hover {
+  background: #0f766e;
+}
+
+/* keep the draggable handles slightly away from the corners */
+.drag-handle {
+  margin: -6px;
 }
